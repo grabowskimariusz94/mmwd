@@ -3,6 +3,8 @@
 # Sample
 import numpy as np
 import random
+from typing import List, Callable
+import copy
 
 
 high = 10 # [kg] najcięższy możliwy odważnik
@@ -12,6 +14,18 @@ g = 10 # [m/s**2] przyspieszenie ziemskie
 R = 4 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
 M = 100 # [Nm] moment siły
 
+
+def printBeautiful(array: list, name: str, size: int) -> None:
+    """
+          Printuje listę w czytelniejszy sposób.
+
+                  Parametry:
+                        array (list): Lista.
+                        name (str): Nazwa listy.
+                        n (int): Rozmiar listy.
+    """
+    for i in range(size):
+        print('{name}[{i}] =\n {value} \n'.format(name=name, i=i, value=array[i]))
 
 # wygeneruj przypadkowy zbiór odważników:
 def GenRandWeighs(size, high, low = 0):
@@ -110,5 +124,60 @@ for i in range(n):
 (F2, I2) = SortBestSol(NewGener, M, g)
 print('F2 = ', F2)
 print('I2 = ', I2)
-               
 
+# Nie usuwajcie
+# Types
+Solutions = List[List[List[float]]]
+
+
+def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
+    """
+      Mutuje rozwiązania jeśli nie są one wystarczające.
+
+              Parametry:
+                    currentSolutions (Solutions): Obecne rozwiązania, które nie spełniają warunków.
+                    maxDistance (Solutions): Maksymalny dystans, który pozwoli wygenerować listę dostępnych wszystkich miejsc.
+
+              Returns:
+                    mutatedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji.
+    """
+    copiedCurrentSolutions = copy.deepcopy(currentSolutions)
+    # print("Lista przed: \n", copiedCurrentSolutions)
+
+    randomSolutionNumber: int = np.random.randint(0, len(copiedCurrentSolutions))
+    # Randomowe rozwiązanie, w którym będziemy aplikować mutację
+    randomSolution: List[List[float]] = copiedCurrentSolutions[randomSolutionNumber]
+
+    # Wyciąga z rozwiązania zajęte miejsca
+    findTakenPositions: Callable[[List[float]], int] = lambda weightDistance: weightDistance[1]
+
+    allPositions: set = set(range(-maxDistance, maxDistance + 1))
+    takenPositions: set = set(map(findTakenPositions, randomSolution))
+    availablePositions: set = allPositions - takenPositions
+    # print("Wszystkie miejsca: ", allPositions)
+    # print("Zajęte miejsca: ", takenPositions)
+    # print("Dostępne miejsca: ", availablePositions)
+
+    randomAvailablePosition: int = random.choice(tuple(availablePositions))
+    # print("Randomowe dostępne miejsce: ", randomAvailablePosition)
+
+    # print("Randomowe rozwiązanie przed: \n", randomSolution)
+
+    randomWeightDistanceNumber: int = np.random.randint(0, len(randomSolution))
+    # print("Randomowa liczba wskazująca na parę (ciężar, pozycja): ", randomWeightDistanceNumber)
+    randomWeightDistance = randomSolution[randomWeightDistanceNumber]
+
+    # Mutuje 1 losowo wybraną parę
+    randomWeightDistance[1] = randomAvailablePosition
+
+    # Wstawienie rozwiązania z zmutowaną parą do kopii oryginalnej listy
+    copiedCurrentSolutions[randomSolutionNumber] = randomSolution
+
+    # print("Randomowe rozwiązanie po: \n", randomSolution)
+    # print("Lista po: \n", copiedCurrentSolutions)
+    return copiedCurrentSolutions
+
+
+mutated = mutate(NewGener, R)
+
+printBeautiful(mutated, "mutated", len(mutated))
