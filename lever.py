@@ -52,7 +52,7 @@ def Select(S,I):
 
 def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacji
     left = random.sample(range(k), int(k/2))   #wybieranie genów które będą brane od rodzica i
-    NewGener = S                         # przypisanie najlepszych wyników starej generacji do nowej
+    NewGener = copy.deepcopy(S)                         # przypisanie najlepszych wyników starej generacji do nowej
     for i in range(len(S)):       # każdy element starej generacji będzie rodzicem i raz
         j = i                   # j to drugi rodzic
         while j == i:
@@ -70,12 +70,12 @@ def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacj
                     while not good:
                         if S[i][gen][1] + p <= R:
                             if S[i][gen][1]+p not in prohibited:
-                                child.append([S[i][gen][0],S[i][gen][1] + p])
+                                child.append(np.array([S[i][gen][0],S[i][gen][1] + p]))
                                 prohibited.append(S[i][gen][1]+p)
                                 good = True
                         elif S[i][gen][1] - p >= -R:
                             if S[i][gen][1]-p not in prohibited:
-                                child.append([S[i][gen][0],S[i][gen][1] - p])
+                                child.append(np.array([S[i][gen][0],S[i][gen][1] - p]))
                                 prohibited.append(S[i][gen][1]-p)
                                 good = True
                         p+=1
@@ -89,12 +89,12 @@ def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacj
                     while not good:
                         if S[j][gen][1] + p <= R:
                             if S[j][gen][1]+p not in prohibited:
-                                child.append([S[j][gen][0],S[j][gen][1] + p])
+                                child.append(np.array([S[j][gen][0],S[j][gen][1] + p]))
                                 prohibited.append(S[j][gen][1]+p)
                                 good = True
                         elif S[j][gen][1] - p >= -R:
                             if S[j][gen][1]-p not in prohibited:
-                                child.append([S[j][gen][0],S[j][gen][1] - p])
+                                child.append(np.array([S[j][gen][0],S[j][gen][1] - p]))
                                 prohibited.append(S[j][gen][1]-p)
                                 good = True
                         p+=1
