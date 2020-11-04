@@ -36,23 +36,22 @@ def Select(S,I):
         print('Selected[', i, '] =\n', Selected[i], '\n')
     return Selected
 
-def Crossing(S):
-    left = random.sample(range(k), 2)
-    NewGener = S
-    for i in range(len(S)):
-        j = i
+def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacji
+    left = random.sample(range(k), int(k/2))   #wybieranie genów które będą brane od rodzica i
+    NewGener = S                         # przypisanie najlepszych wyników starej generacji do nowej
+    for i in range(len(S)):       # każdy element starej generacji będzie rodzicem i raz
+        j = i                   # j to drugi rodzic
         while j == i:
             j = random.randint(0,len(S)-1)
-        child = []
-        prohibited = []
-        for gen in range(k):
-            if gen in left:
-                if S[i][gen][1] not in prohibited:
-                    child.append(S[i][gen])
-                    prohibited.append(S[i][gen][1])
-                    good = True
-                else:
-                    p = 1
+        child = []       # nowe rozwiązanie
+        prohibited = []  # lista na zajęte już pozycje w nowym rozwiązaniu
+        for gen in range(k): # pętla dla każdego ciężarka
+            if gen in left:  # ciężarek będzie brany od rodzica i
+                if S[i][gen][1] not in prohibited:  # jesli miejsce dla ciezarka nie jest zajete
+                    child.append(S[i][gen])         # to dodaj ciezarek z miejscem do nowego rozwiazania
+                    prohibited.append(S[i][gen][1]) # zajete miejsce dodaj do listy zajetych miejsc
+                else:                           # jesli miejsce jest juz zajete
+                    p = 1                       # to wybieramy miejsce najblizsze w okolicy
                     good = False
                     while not good:
                         if S[i][gen][1] + p <= R:
@@ -66,11 +65,10 @@ def Crossing(S):
                                 prohibited.append(S[i][gen][1]-p)
                                 good = True
                         p+=1
-            else:
+            else:                           # ciężarek będzie brany od rodzica j
                 if S[j][gen][1] not in prohibited:
                     child.append(S[j][gen])
                     prohibited.append(S[j][gen][1])
-                    good = True
                 else:
                     p = 1
                     good = False
@@ -86,7 +84,7 @@ def Crossing(S):
                                 prohibited.append(S[j][gen][1]-p)
                                 good = True
                         p+=1
-        NewGener.append(np.array(child))
+        NewGener.append(np.array(child))  # rozszerzenie nowej generacji o nowe rozwiazanie
     return NewGener
 
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
@@ -109,8 +107,8 @@ NewGener = Crossing(Selected)
 for i in range(n):
     print('NewGener[', i, '] =\n', NewGener[i], '\n')    
 
-(F, I) = SortBestSol(NewGener, M, g)
-print('F = ', F)
-print('I = ', I)
+(F2, I2) = SortBestSol(NewGener, M, g)
+print('F2 = ', F2)
+print('I2 = ', I2)
                
 
