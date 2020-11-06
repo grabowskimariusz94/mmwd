@@ -5,13 +5,14 @@ import numpy as np
 import random
 from typing import List, Callable
 import copy
+import matplotlib.pyplot as plt
 
 
-high = 10 # [kg] najcięższy możliwy odważnik
-k = 4 # liczba odważników
-n = 6 # liczba rozwiązań początkowych
+high = 100 # [kg] najcięższy możliwy odważnik
+k = 200 # liczba odważników
+n = 10 # liczba rozwiązań początkowych
 g = 10 # [m/s**2] przyspieszenie ziemskie
-R = 4 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
+R = 600 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
 M = 100 # [Nm] moment siły
 
 
@@ -47,7 +48,7 @@ def Select(S,I):
     Selected = []
     for i in range(int(len(I)/2)):
         Selected.append(S[I[i]])
-        print('Selected[', i, '] =\n', Selected[i], '\n')
+        # print('Selected[', i, '] =\n', Selected[i], '\n')
     return Selected
 
 def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacji
@@ -101,34 +102,9 @@ def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacj
         NewGener.append(np.array(child))  # rozszerzenie nowej generacji o nowe rozwiazanie
     return NewGener
 
-# I etap (tworzenie pierwszego pokolenia rozwiązań):
-
-MS = GenRandWeighs(k, high)
-print('MS = ', MS)
-
-S = [GenRandSol(MS, R) for i in range(n)]
-for i in range(n):
-    print('S[', i, '] =\n', S[i], '\n')
-
-(F, I) = SortBestSol(S, M, g)
-print('F = ', F)
-print('I = ', I)  
-
-# TODO: II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
-Selected = Select(S,I)
-NewGener = Crossing(Selected)
-    
-for i in range(n):
-    print('NewGener[', i, '] =\n', NewGener[i], '\n')    
-
-(F2, I2) = SortBestSol(NewGener, M, g)
-print('F2 = ', F2)
-print('I2 = ', I2)
-
 # Nie usuwajcie
 # Types
 Solutions = List[List[List[float]]]
-
 
 def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
     """
@@ -178,6 +154,41 @@ def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
     return copiedCurrentSolutions
 
 
-mutated = mutate(NewGener, R)
+# I etap (tworzenie pierwszego pokolenia rozwiązań):
 
-printBeautiful(mutated, "mutated", len(mutated))
+MS = GenRandWeighs(k, high)
+print('MS = ', MS)
+
+S = [GenRandSol(MS, R) for i in range(n)]
+for i in range(n):
+    print('S[', i, '] =\n', S[i], '\n')
+
+(F, I) = SortBestSol(S, M, g)
+print('F = ', F)
+print('I = ', I)  
+
+# TODO: II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
+Selected = Select(S,I)
+
+    
+#for i in range(n):
+#   print('NewGener[', i, '] =\n', NewGener[i], '\n')    
+bestchild = []
+bestchild.append(F[I[0]])
+
+for i in range(1000):
+    NewGener = Crossing(Selected)
+    mutated = mutate(NewGener, R)
+    (F, I) = SortBestSol(mutated, M, g)
+    bestchild.append(F[I[0]])
+    Selected = Select(mutated,I)
+    print(F[I[0]])
+
+plt.plot(bestchild)
+
+
+
+#printBeautiful(mutated, "mutated", len(mutated))
+
+
+    
