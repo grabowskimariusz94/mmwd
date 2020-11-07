@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 
 
 high = 100 # [kg] najcięższy możliwy odważnik
-k = 200 # liczba odważników
-n = 10 # liczba rozwiązań początkowych
+k = 5 # liczba odważników
+n = 6 # liczba rozwiązań początkowych
 g = 10 # [m/s**2] przyspieszenie ziemskie
-R = 600 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
+R = 20 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
 M = 100 # [Nm] moment siły
 
 
@@ -115,7 +115,7 @@ def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
                     maxDistance (Solutions): Maksymalny dystans, który pozwoli wygenerować listę dostępnych wszystkich miejsc.
 
               Returns:
-                    mutatedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji.
+                    copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji.
     """
     copiedCurrentSolutions = copy.deepcopy(currentSolutions)
     # print("Lista przed: \n", copiedCurrentSolutions)
@@ -154,6 +154,40 @@ def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
     return copiedCurrentSolutions
 
 
+def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torque: float, gravity: float) -> bool:
+    """
+        Ocenia mutację pod względem lepszego rezultatu. Jeśli wynik jest korzystniejszy zwraca False.
+
+                Parametry:
+                      currentSolutions (Solutions): Obecne rozwiązania.
+                      mutatedSolutions (Solutions): Zmutowane rozwiązania.
+                      torque (float): Moment siły.
+                      gravity (float): Przyspieszenie.
+
+                Returns:
+                      (bool): Wiadomość o korzystniejszym stanie.
+    """
+    def objectiveFunction(solutions: Solutions) -> float:
+        """
+             Zwraca najlepszy rezultat w danych rozwiązaniach.
+
+                     Parametry:
+                           solutions (Solutions): Rozwiązania.
+
+                     Returns:
+                           bestResult (float): Najlepszy rezultat.
+         """
+        bestResult = min([abs(torque - gravity * np.sum(np.multiply(solution[:, 0], solution[:, 1])))
+                          for solution in solutions])
+
+        return bestResult
+
+    bestCurrentResult: float = objectiveFunction(currentSolutions)
+    bestMutatedResult: float = objectiveFunction(mutatedSolutions)
+    # print("Obecne najlepsze: ", bestCurrentResult, "Zmutowane najlepsze: ", bestMutatedResult)
+
+    return bestMutatedResult >= bestCurrentResult
+
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 
 MS = GenRandWeighs(k, high)
@@ -176,19 +210,38 @@ Selected = Select(S,I)
 bestchild = []
 bestchild.append(F[I[0]])
 
-for i in range(1000):
+# ---------- Calculation settings ----------
+howOftenMutation = 200  # Co jaki czas ma się pojawiać próba mutacji
+amountMutationAttempts = 100  # Ilość mutacji w danej próbie
+generations = 1000  # Liczba generacji
+# ---------- End  ----------
+
+for i in range(generations):
     NewGener = Crossing(Selected)
-    mutated = mutate(NewGener, R)
-    (F, I) = SortBestSol(mutated, M, g)
+    mutationFlag = True
+    mutated = None
+    if not (i+1) % howOftenMutation:
+        mutated = mutate(NewGener, R)
+        mutationFlag: bool = markMutation(NewGener, mutated, M, g)
+        if mutationFlag:
+            counter = 0
+            copyMutated = copy.deepcopy(mutated)
+            attempts = amountMutationAttempts
+            while mutationFlag and counter <= attempts:
+                copyMutated = mutate(NewGener, R)
+                mutationFlag = markMutation(NewGener, copyMutated, M, g)
+                counter += 1
+            if counter <= attempts:
+                mutated = copyMutated
+
+    (F, I) = SortBestSol(NewGener if mutationFlag else mutated, M, g)
     bestchild.append(F[I[0]])
-    Selected = Select(mutated,I)
-    print(F[I[0]])
+    Selected = Select(NewGener if mutationFlag else mutated, I)
+
+
+    # print(F[I[0]])
 
 plt.plot(bestchild)
-
-
+plt.show()
 
 #printBeautiful(mutated, "mutated", len(mutated))
-
-
-    
