@@ -12,7 +12,7 @@ high = 100 # [kg] najcięższy możliwy odważnik
 k = 5 # liczba odważników
 n = 6 # liczba rozwiązań początkowych
 g = 10 # [m/s**2] przyspieszenie ziemskie
-R = 20 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
+R = 4 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
 M = 100 # [Nm] moment siły
 
 
@@ -28,21 +28,45 @@ def printBeautiful(array: list, name: str, size: int) -> None:
     for i in range(size):
         print('{name}[{i}] =\n {value} \n'.format(name=name, i=i, value=array[i]))
 
-# wygeneruj przypadkowy zbiór odważników:
-def GenRandWeighs(size, high, low = 0):
-    return np.array([random.triangular(low,high) for i in range(size)])
+# wygeneruj przypadkowy zbiór <size> odważników z zakresu liczb naturalnych [low,high] i zwróć posortowane:
+def genRandWeighs(low = 1, high: int = high, k: int = k):
+    return np.array(sorted(random.choices(range(low,high),k = k)))
 
-# wygeneruj jedno przypadkowe rozwiązanie początkowe jako macierz (pionowy wektor poziomych par (m,r)):
-GenRandSol = lambda MS, R : np.transpose(np.array([MS,random.sample(range(-R,R),len(MS))]))
+# wygeneruj jedno przypadkowe rozwiązanie początkowe jako wektor indeksów wektora MS
+# wygenerowany wektor ma długość 2R+1
+# puste miejsca na belce dźwigni są None
+def genRandSol(R: int = R, k: int = k):
+    if k>2*R+1:
+        raise ValueError("odważniki nie mieszczą się na takiej dźwigni")
+    Sol = np.full(2*R+1,None)
+    Pos = random.sample(range(2*R+1),k)
+    for i in range(len(Pos)):
+        Sol[Pos[i]] = i
+    return Sol
 
 # oblicz wartość funkcji celu obecnego rozwiązania:
-ObjectiveFunc = lambda M, sol, g : abs(M-g*np.sum(np.multiply(sol[:,0],sol[:,1])))
+def objectiveFunc(Sol, MS, M: float, g: float = 10) -> int:
+    mr = 0 # [kg·m]
+    if None in Sol:
+        for i in range(len(Sol)):
+            if Sol[i] is not None:
+                mr += MS[Sol[i]]*(i-R)
+    else:
+        for i in range(len(Sol)):
+            if Sol[i] != 0:
+                mr += Sol[i]*(i-R)
+    return abs(M-g*mr)
 # argument < 0 funkcji abs() oznaczałby, że dźwignia przechyla się na grot osi
 
-def SortBestSol(S, M, g):
-    F = [ObjectiveFunc(M, sol, g) for sol in S]# wartości funkcji celu dla S
-    I = sorted(range(len(F)), key = lambda k : F[k]) # indeksy sortowania
-    return F, I
+def sortBestSol(S, MS, M: float, g: float = 10):
+    F = [objectiveFunc(Sol, MS, M, g) for Sol in S] # wartości funkcji celu dla S
+    Idx = sorted(range(len(F)), key = lambda k : F[k]) # indeksy sortowania
+    return F, Idx
+
+def transformSol(S, MS):
+    f = lambda x : 0 if x is None else MS[x]
+    g = lambda x : list(map(f,x))
+    return list(map(g,S))
 
 def Select(S,I):
     Selected = []
@@ -190,18 +214,19 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
 
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 
-MS = GenRandWeighs(k, high)
+MS = genRandWeighs()
 print('MS = ', MS)
 
-S = [GenRandSol(MS, R) for i in range(n)]
+S = [genRandSol() for i in range(n)]
+S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 for i in range(n):
     print('S[', i, '] =\n', S[i], '\n')
 
-(F, I) = SortBestSol(S, M, g)
+(F, Idx) = sortBestSol(S, MS, M)
 print('F = ', F)
-print('I = ', I)  
-
-# TODO: II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
+print('Idx = ', Idx)  
+"""
+# II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
 Selected = Select(S,I)
 
     
@@ -245,3 +270,4 @@ plt.plot(bestchild)
 plt.show()
 
 #printBeautiful(mutated, "mutated", len(mutated))
+"""
