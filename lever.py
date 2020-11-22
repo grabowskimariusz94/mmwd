@@ -128,57 +128,58 @@ def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacj
 
 # Nie usuwajcie
 # Types
-Solutions = List[List[List[float]]]
+Solutions = List[List[float]]
 
-def mutate(currentSolutions: Solutions, maxDistance: int) -> Solutions:
+def mutate(currentSolutions: Solutions, maxDistance: int, log: bool = False) -> Solutions:
     """
       Mutuje rozwiązania jeśli nie są one wystarczające.
 
               Parametry:
                     currentSolutions (Solutions): Obecne rozwiązania, które nie spełniają warunków.
                     maxDistance (Solutions): Maksymalny dystans, który pozwoli wygenerować listę dostępnych wszystkich miejsc.
+                    log (bool): Określa pokazywanie informacji procesu.
 
               Returns:
                     copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji.
     """
     copiedCurrentSolutions = copy.deepcopy(currentSolutions)
-    # print("Lista przed: \n", copiedCurrentSolutions)
 
     randomSolutionNumber: int = np.random.randint(0, len(copiedCurrentSolutions))
     # Randomowe rozwiązanie, w którym będziemy aplikować mutację
-    randomSolution: List[List[float]] = copiedCurrentSolutions[randomSolutionNumber]
+    randomSolution: List[float] = copiedCurrentSolutions[randomSolutionNumber]
 
+    allPositions: set = set(range(2*maxDistance + 1))
     # Wyciąga z rozwiązania zajęte miejsca
-    findTakenPositions: Callable[[List[float]], int] = lambda weightDistance: weightDistance[1]
-
-    allPositions: set = set(range(-maxDistance, maxDistance + 1))
-    takenPositions: set = set(map(findTakenPositions, randomSolution))
+    takenPositions: set = set([index for index, weight in enumerate(randomSolution) if weight])
     availablePositions: set = allPositions - takenPositions
-    # print("Wszystkie miejsca: ", allPositions)
-    # print("Zajęte miejsca: ", takenPositions)
-    # print("Dostępne miejsca: ", availablePositions)
+    if log:
+        print("\n\nMutate...")
+        print("Wszystkie miejsca: ", allPositions)
+        print("Zajęte miejsca: ", takenPositions)
+        print("Dostępne miejsca: ", availablePositions)
 
     randomAvailablePosition: int = random.choice(tuple(availablePositions))
-    # print("Randomowe dostępne miejsce: ", randomAvailablePosition)
-
-    # print("Randomowe rozwiązanie przed: \n", randomSolution)
-
-    randomWeightDistanceNumber: int = np.random.randint(0, len(randomSolution))
-    # print("Randomowa liczba wskazująca na parę (ciężar, pozycja): ", randomWeightDistanceNumber)
-    randomWeightDistance = randomSolution[randomWeightDistanceNumber]
+    randomWeightDistanceNumber: int = random.choice(tuple(takenPositions))
+    if log:
+        print("Randomowe dostępne miejsce: ", randomAvailablePosition)
+        print("Randomowe zajęte miejsce: ", randomWeightDistanceNumber)
+        print("Randomowe rozwiązanie przed: \n", randomSolution)
 
     # Mutuje 1 losowo wybraną parę
-    randomWeightDistance[1] = randomAvailablePosition
+    randomSolution[randomAvailablePosition] = randomSolution[randomWeightDistanceNumber]
+    randomSolution[randomWeightDistanceNumber] = 0
+    if log:
+        print("Randomowe rozwiązanie po: \n", randomSolution)
+        print("End mutate\n\n")
 
     # Wstawienie rozwiązania z zmutowaną parą do kopii oryginalnej listy
     copiedCurrentSolutions[randomSolutionNumber] = randomSolution
 
-    # print("Randomowe rozwiązanie po: \n", randomSolution)
     # print("Lista po: \n", copiedCurrentSolutions)
     return copiedCurrentSolutions
 
 
-def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torque: float, gravity: float) -> bool:
+def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torque: float, gravity: float, maxDistance: int) -> bool:
     """
         Ocenia mutację pod względem lepszego rezultatu. Jeśli wynik jest korzystniejszy zwraca False.
 
@@ -201,14 +202,15 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
                      Returns:
                            bestResult (float): Najlepszy rezultat.
          """
-        bestResult = min([abs(torque - gravity * np.sum(np.multiply(solution[:, 0], solution[:, 1])))
+        bestResult = min([abs(torque - gravity *
+                              sum([weight * (index - maxDistance) for index, weight in enumerate(solution) if weight]))
                           for solution in solutions])
 
         return bestResult
 
     bestCurrentResult: float = objectiveFunction(currentSolutions)
     bestMutatedResult: float = objectiveFunction(mutatedSolutions)
-    # print("Obecne najlepsze: ", bestCurrentResult, "Zmutowane najlepsze: ", bestMutatedResult)
+    print("Obecne najlepsze: ", bestCurrentResult, "Zmutowane najlepsze: ", bestMutatedResult)
 
     return bestMutatedResult >= bestCurrentResult
 
@@ -222,9 +224,13 @@ S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a 
 for i in range(n):
     print('S[', i, '] =\n', S[i], '\n')
 
+# Odkomentuj jeśli chcesz zobaczyć mutate
+# mutate(S, R, True)
+# print(markMutation(S, S, M, g, R))
+
 (F, Idx) = sortBestSol(S, MS, M)
 print('F = ', F)
-print('Idx = ', Idx)  
+print('Idx = ', Idx)
 """
 # II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
 Selected = Select(S,I)
