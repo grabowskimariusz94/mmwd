@@ -70,8 +70,13 @@ def transformSol(S, MS):
 
 def Select(S,I):
     Selected = []
-    for i in range(int(len(I)/2)):
-        Selected.append(S[I[i]])
+    not_best_selected = random.sample(range(n-int(n/3)), int(n/2)-int(n/3))
+    not_best_selected=[x+int(n/3) for x in not_best_selected]
+    for i in range(int(n/2)):
+        if(i<int(n/3)):
+            Selected.append(S[I[i]])
+        else:
+            Selected.append(S[I[not_best_selected[i-int(n/3)]]])
         # print('Selected[', i, '] =\n', Selected[i], '\n')
     return Selected
 
@@ -297,3 +302,4 @@ plt.plot(bestchild)
 plt.show()
 
 #printBeautiful(mutated, "mutated", len(mutated))
+
