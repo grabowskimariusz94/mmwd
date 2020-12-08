@@ -267,7 +267,7 @@ bestchild.append(F[Idx[0]])
 # ---------- Calculation settings ----------
 howOftenMutation = 200  # Co jaki czas ma się pojawiać próba mutacji
 amountMutationAttempts = 100  # Ilość mutacji w danej próbie
-generations = 300  # Liczba generacji
+generations = 1000  # Liczba generacji
 # ---------- End  ----------
 
 for i in range(generations):
@@ -279,21 +279,24 @@ for i in range(generations):
     mutated = None
     if not (i+1) % howOftenMutation:
         mutated = mutate(NewGener, R)
-        mutationFlag: bool = markMutation(NewGener, mutated, M, g)
+        mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
         if mutationFlag:
             counter = 0
             copyMutated = copy.deepcopy(mutated)
             attempts = amountMutationAttempts
             while mutationFlag and counter <= attempts:
                 copyMutated = mutate(NewGener, R)
-                mutationFlag = markMutation(NewGener, copyMutated, M, g)
+                mutationFlag = markMutation(NewGener, copyMutated, M, g, R)
                 counter += 1
             if counter <= attempts:
                 mutated = copyMutated
 
-    (F, I) = sortBestSol(NewGener if mutationFlag else mutated, M, g)
-    bestchild.append(F[I[0]])
-    Selected = Select(NewGener if mutationFlag else mutated, I)
+    (F, Idx) = sortBestSol(NewGener if mutationFlag else mutated, MS, M)
+    bestchild.append(F[Idx[0]])
+    Selected = Select(NewGener if mutationFlag else mutated, Idx)
+    # (F, I) = sortBestSol(NewGener if mutationFlag else mutated, M, g)
+    # bestchild.append(F[I[0]])
+    # Selected = Select(NewGener if mutationFlag else mutated, I)
 
 
     # print(F[I[0]])
