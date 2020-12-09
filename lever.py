@@ -32,6 +32,8 @@ def printBeautiful(array: list, name: str, size: int) -> None:
 def genRandWeighs(low = 1, high: int = high, k: int = k):
     return np.array(sorted(random.choices(range(low,high),k = k)))
 
+reps = lambda elem : sum(MS == elem)
+
 # wygeneruj jedno przypadkowe rozwiązanie początkowe jako wektor indeksów wektora MS
 # wygenerowany wektor ma długość 2R+1
 # puste miejsca na belce dźwigni są None
@@ -39,7 +41,7 @@ def genRandSol(R: int = R, k: int = k):
     if k>2*R+1:
         raise ValueError("odważniki nie mieszczą się na takiej dźwigni")
     Sol = np.full(2*R+1,None)
-    Pos = random.sample(range(2*R+1),k)
+    Pos = random.sample(range(2*R+1),random.randint(1,k))
     for i in range(len(Pos)):
         Sol[Pos[i]] = i
     return Sol
@@ -234,15 +236,24 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
 
     return bestMutatedResult >= bestCurrentResult
 
+
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 
-MS = genRandWeighs()
-print('MS = ', MS)
+# I sposób:
+# MS = genRandWeighs()
+
+# II sposób:
+MS = 5*[3]+4*[2]
+MS = np.array(sorted(MS))
+
+print('MS =', MS)
+print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
 
 S = [genRandSol() for i in range(n)]
 S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 for i in range(n):
-    print('S[', i, '] =\n', S[i], '\n')
+    print('S[', i, '] =\n', S[i])
+    print('Powtórzenia \'3\' w S[', i, ']:', S[i].count(3), '\n') # powtórzenia w liście
 
 # Odkomentuj jeśli chcesz zobaczyć mutate
 # mutate(S, R, True)
@@ -305,4 +316,3 @@ plt.plot(bestchild)
 plt.show()
 
 #printBeautiful(mutated, "mutated", len(mutated))
-
