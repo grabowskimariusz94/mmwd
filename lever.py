@@ -9,11 +9,13 @@ import matplotlib.pyplot as plt
 
 
 high = 100 # [kg] najcięższy możliwy odważnik
-k = 9 # liczba odważników
-n = 6 # liczba rozwiązań początkowych
+k = 24 # liczba odważników
+n = 12 # liczba rozwiązań początkowych
 g = 10 # [m/s**2] przyspieszenie ziemskie
-R = 8 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
-M = 100 # [Nm] moment siły
+R = 12 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
+M = 5000 # [Nm] moment siły
+
+w = 8 # liczba rodziców dla kolejnych generacji
 
 
 def printBeautiful(array: list, name: str, size: int) -> None:
@@ -72,6 +74,8 @@ def transformSol(S, MS):
 
 def Select(S,I):
     Selected = []
+    ''' 
+    # mocno elitarnie
     not_best_selected = random.sample(range(n-int(n/3)), int(n/2)-int(n/3))
     not_best_selected=[x+int(n/3) for x in not_best_selected]
     for i in range(int(n/2)):
@@ -80,6 +84,20 @@ def Select(S,I):
         else:
             Selected.append(S[I[not_best_selected[i-int(n/3)]]])
         # print('Selected[', i, '] =\n', Selected[i], '\n')
+    '''
+    # mniej elitarnie
+    prohibited = []
+    for i in range(w):
+        good = False
+        while good!=True:
+            random_selected = random.sample(range(len(I)), int(len(I)/8))
+            min_random_selected = I[min(random_selected)]
+            if (min_random_selected  not in prohibited ):
+                prohibited.append(min_random_selected)
+                good = True
+        Selected.append(S[min_random_selected])
+        # print('Selected[', i, '] =\n', Selected[i], '\n')
+    
     return Selected
 
 def Crossing(S):                                # argumentem jest lista najlepszych wyników ze starej generacji
@@ -92,9 +110,13 @@ def Crossing(S):                                # argumentem jest lista najlepsz
         child = []       # nowe rozwiązani
         for gen in range(2*R+1): # pętla dla każdego miejsca
             if gen in left:  # ciężarek będzie brany od rodzic
-                child.append(S[i][gen])         # to dodaj ciezarek z miejscem do nowego rozwiazania
-            else : 
-                child.append(S[j][gen])
+                x = S[i][gen]
+            else: 
+                x = S[j][gen]
+            if(x!=0):
+                while (child.count(x)>=np.count_nonzero(MS == x)):    #gdy brakuje ciężarków
+                    x = random.choice(MS)               #to wylosuj na to miejsce inny
+            child.append(x)         # dodaj ciezarek z miejscem do nowego rozwiazania
         NewGener.append(child)  # rozszerzenie nowej generacji o nowe rozwiazanie
    return NewGener
 
@@ -240,10 +262,10 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 
 # I sposób:
-# MS = genRandWeighs()
+#MS = genRandWeighs()
 
 # II sposób:
-MS = 5*[3]+4*[2]
+MS = 5*[8]+4*[6]+5*[5]+4*[4]+5*[3]+4*[2]
 MS = np.array(sorted(MS))
 
 print('MS =', MS)
@@ -267,7 +289,7 @@ print('Idx = ', Idx)
 
 # II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
 Selected = Select(S,Idx)
-for i in range(int(n/2)):
+for i in range(w):
     print('Selected[', i, '] =\n', Selected[i], '\n')
 
 #for i in range(n):
@@ -275,11 +297,15 @@ for i in range(int(n/2)):
 bestchild = []
 bestchild.append(F[Idx[0]])
 
+best = S[Idx[0]]
+best_value = F[Idx[0]]
+
 # ---------- Calculation settings ----------
-howOftenMutation = 200  # Co jaki czas ma się pojawiać próba mutacji
-amountMutationAttempts = 100  # Ilość mutacji w danej próbie
-generations = 1000  # Liczba generacji
+howOftenMutation = 20  # Co jaki czas ma się pojawiać próba mutacji
+amountMutationAttempts = 1  # Ilość mutacji w danej próbie
+generations = 200  # Liczba generacji
 # ---------- End  ----------
+
 
 for i in range(generations):
     NewGener = Crossing(Selected)
@@ -302,17 +328,22 @@ for i in range(generations):
             if counter <= attempts:
                 mutated = copyMutated
 
-    (F, Idx) = sortBestSol(NewGener if mutationFlag else mutated, MS, M)
+    (F, Idx) = sortBestSol(NewGener if not mutated else mutated, MS, M)
     bestchild.append(F[Idx[0]])
-    Selected = Select(NewGener if mutationFlag else mutated, Idx)
+    if(F[Idx[0]]<best_value):
+        best_value = F[Idx[0]]
+        best = NewGener[Idx[0]] if mutationFlag else mutated[Idx[0]]
+    Selected = Select(NewGener if not mutated else mutated, Idx)
     # (F, I) = sortBestSol(NewGener if mutationFlag else mutated, M, g)
     # bestchild.append(F[I[0]])
     # Selected = Select(NewGener if mutationFlag else mutated, I)
-
+    #plt.plot(best_value)
 
     # print(F[I[0]])
 print(bestchild)
 plt.plot(bestchild)
 plt.show()
+print(best)
+print(best_value)
 
 #printBeautiful(mutated, "mutated", len(mutated))
