@@ -31,15 +31,15 @@ def printBeautiful(array: list, name: str, size: int) -> None:
         print('{name}[{i}] =\n {value} \n'.format(name=name, i=i, value=array[i]))
 
 # wygeneruj przypadkowy zbiór <size> odważników z zakresu liczb naturalnych [low,high] i zwróć posortowane:
-def genRandWeighs(low = 1, high: int = high, k: int = k):
-    return np.array(sorted(random.choices(range(low,high),k = k)))
+def genRandWeighs(low=1, high: int=high, k: int=k):
+    return np.array(sorted(random.choices(range(low,high),k=k)))
 
-reps = lambda elem : sum(MS == elem)
+reps = lambda elem: sum(MS==elem)
 
 # wygeneruj jedno przypadkowe rozwiązanie początkowe jako wektor indeksów wektora MS
 # wygenerowany wektor ma długość 2R+1
 # puste miejsca na belce dźwigni są None
-def genRandSol(R: int = R, k: int = k):
+def genRandSol(R: int=R, k: int=k):
     if k>2*R+1:
         raise ValueError("odważniki nie mieszczą się na takiej dźwigni")
     Sol = np.full(2*R+1,None)
@@ -49,7 +49,7 @@ def genRandSol(R: int = R, k: int = k):
     return Sol
 
 # oblicz wartość funkcji celu obecnego rozwiązania:
-def objectiveFunc(Sol, MS, M: float, g: float = 10) -> int:
+def objectiveFunc(Sol, MS, M: float, g: float=10) -> int:
     mr = 0 # [kg·m]
     if None in Sol:
         for i in range(len(Sol)):
@@ -120,56 +120,7 @@ def Crossing(S):                                # argumentem jest lista najlepsz
         NewGener.append(child)  # rozszerzenie nowej generacji o nowe rozwiazanie
    return NewGener
 
-#def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacji
-#   left = random.sample(range(k), int(k/2))   #wybieranie genów które będą brane od rodzica i
-#    NewGener = copy.deepcopy(S)                         # przypisanie najlepszych wyników starej generacji do nowej
-#    for i in range(len(S)):       # każdy element starej generacji będzie rodzicem i raz
-#        j = i                   # j to drugi rodzic
-#        while j == i:
-#            j = random.randint(0,len(S)-1)
-#        child = []       # nowe rozwiązanie
-#        prohibited = []  # lista na zajęte już pozycje w nowym rozwiązaniu
-#        for gen in range(k): # pętla dla każdego ciężarka
-#            if gen in left:  # ciężarek będzie brany od rodzica i
-#                if S[i][gen][1] not in prohibited:  # jesli miejsce dla ciezarka nie jest zajete
-#                    child.append(S[i][gen])         # to dodaj ciezarek z miejscem do nowego rozwiazania
-#                    prohibited.append(S[i][gen][1]) # zajete miejsce dodaj do listy zajetych miejsc
-#                else:                           # jesli miejsce jest juz zajete
-#                    p = 1                       # to wybieramy miejsce najblizsze w okolicy
-#                    good = False
-#               while not good:
-#                       if S[i][gen][1] + p <= R:
-#                            if S[i][gen][1]+p not in prohibited:
-#                                child.append(np.array([S[i][gen][0],S[i][gen][1] + p]))
-#                                prohibited.append(S[i][gen][1]+p)
-#                                good = True
-#                        elif S[i][gen][1] - p >= -R:
-#                            if S[i][gen][1]-p not in prohibited:
-#                                child.append(np.array([S[i][gen][0],S[i][gen][1] - p]))
-#                                prohibited.append(S[i][gen][1]-p)
-#                                good = True
-#                        p+=1
-#            else:                           # ciężarek będzie brany od rodzica j
-#                if S[j][gen][1] not in prohibited:
-#                    child.append(S[j][gen])
-#                    prohibited.append(S[j][gen][1])
-#                else:
-#                    p = 1
-#                    good = False
-#                    while not good:
-#                        if S[j][gen][1] + p <= R:
-#                            if S[j][gen][1]+p not in prohibited:
-#                                child.append(np.array([S[j][gen][0],S[j][gen][1] + p]))
-#                                prohibited.append(S[j][gen][1]+p)
-#                                good = True
-#                        elif S[j][gen][1] - p >= -R:
-#                            if S[j][gen][1]-p not in prohibited:
-#                                child.append(np.array([S[j][gen][0],S[j][gen][1] - p]))
-#                                prohibited.append(S[j][gen][1]-p)
-#                                good = True
-#                        p+=1
-#        NewGener.append(np.array(child))  # rozszerzenie nowej generacji o nowe rozwiazanie
-#    return NewGener
+
 
 # Nie usuwajcie
 # Types
@@ -347,3 +298,55 @@ print(best)
 print(best_value)
 
 #printBeautiful(mutated, "mutated", len(mutated))
+
+
+#def Crossing(S): # argumentem jest lista najlepszych wyników ze starej generacji
+#   left = random.sample(range(k), int(k/2))   #wybieranie genów które będą brane od rodzica i
+#    NewGener = copy.deepcopy(S)                         # przypisanie najlepszych wyników starej generacji do nowej
+#    for i in range(len(S)):       # każdy element starej generacji będzie rodzicem i raz
+#        j = i                   # j to drugi rodzic
+#        while j == i:
+#            j = random.randint(0,len(S)-1)
+#        child = []       # nowe rozwiązanie
+#        prohibited = []  # lista na zajęte już pozycje w nowym rozwiązaniu
+#        for gen in range(k): # pętla dla każdego ciężarka
+#            if gen in left:  # ciężarek będzie brany od rodzica i
+#                if S[i][gen][1] not in prohibited:  # jesli miejsce dla ciezarka nie jest zajete
+#                    child.append(S[i][gen])         # to dodaj ciezarek z miejscem do nowego rozwiazania
+#                    prohibited.append(S[i][gen][1]) # zajete miejsce dodaj do listy zajetych miejsc
+#                else:                           # jesli miejsce jest juz zajete
+#                    p = 1                       # to wybieramy miejsce najblizsze w okolicy
+#                    good = False
+#               while not good:
+#                       if S[i][gen][1] + p <= R:
+#                            if S[i][gen][1]+p not in prohibited:
+#                                child.append(np.array([S[i][gen][0],S[i][gen][1] + p]))
+#                                prohibited.append(S[i][gen][1]+p)
+#                                good = True
+#                        elif S[i][gen][1] - p >= -R:
+#                            if S[i][gen][1]-p not in prohibited:
+#                                child.append(np.array([S[i][gen][0],S[i][gen][1] - p]))
+#                                prohibited.append(S[i][gen][1]-p)
+#                                good = True
+#                        p+=1
+#            else:                           # ciężarek będzie brany od rodzica j
+#                if S[j][gen][1] not in prohibited:
+#                    child.append(S[j][gen])
+#                    prohibited.append(S[j][gen][1])
+#                else:
+#                    p = 1
+#                    good = False
+#                    while not good:
+#                        if S[j][gen][1] + p <= R:
+#                            if S[j][gen][1]+p not in prohibited:
+#                                child.append(np.array([S[j][gen][0],S[j][gen][1] + p]))
+#                                prohibited.append(S[j][gen][1]+p)
+#                                good = True
+#                        elif S[j][gen][1] - p >= -R:
+#                            if S[j][gen][1]-p not in prohibited:
+#                                child.append(np.array([S[j][gen][0],S[j][gen][1] - p]))
+#                                prohibited.append(S[j][gen][1]-p)
+#                                good = True
+#                        p+=1
+#        NewGener.append(np.array(child))  # rozszerzenie nowej generacji o nowe rozwiazanie
+#    return NewGener
