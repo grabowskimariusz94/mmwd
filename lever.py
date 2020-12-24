@@ -13,7 +13,7 @@ k = 24 # liczba odważników
 n = 12 # liczba rozwiązań początkowych
 g = 10 # [m/s**2] przyspieszenie ziemskie
 R = 12 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
-M = 5000 # [Nm] moment siły
+M = 5620 # [Nm] moment siły
 
 w = 8 # liczba rodziców dla kolejnych generacji
 
@@ -49,7 +49,7 @@ def genRandSol(R: int=R, k: int=k):
     return Sol
 
 # oblicz wartość funkcji celu obecnego rozwiązania:
-def objectiveFunc(Sol, MS, M: float, g: float=10) -> int:
+def objectiveFunc(Sol, MS, M: float=M, g: float=g) -> int:
     mr = 0 # [kg·m]
     if None in Sol:
         for i in range(len(Sol)):
@@ -62,7 +62,7 @@ def objectiveFunc(Sol, MS, M: float, g: float=10) -> int:
     return abs(M-g*mr)
 # argument < 0 funkcji abs() oznaczałby, że dźwignia przechyla się na grot osi
 
-def sortBestSol(S, MS, M: float, g: float = 10):
+def sortBestSol(S, MS, M: float=M, g: float=g):
     F = [objectiveFunc(Sol, MS, M, g) for Sol in S] # wartości funkcji celu dla S
     Idx = sorted(range(len(F)), key = lambda k : F[k]) # indeksy sortowania
     return F, Idx
@@ -120,13 +120,37 @@ def Crossing(S):                                # argumentem jest lista najlepsz
         NewGener.append(child)  # rozszerzenie nowej generacji o nowe rozwiazanie
    return NewGener
 
+def notSick(kid, MS) -> bool:
+    Traits = set(kid)
+    Traits.remove(0)
+    for trait in Traits:
+        if kid.count(trait)>sum(MS==trait):
+            return False
+    return True
 
-
-# Nie usuwajcie
 # Types
 Solutions = List[List[float]]
 
-def mutate(currentSolutions: Solutions, maxDistance: int, log: bool = False) -> Solutions:
+def alternativeCrossing(S, MS, w) -> Solutions: # zabija rodziców, zatem zmniejsza zbieżność
+    _, Idx = sortBestSol(S, MS)
+    Daddies = random.sample(range(w),random.randint(1,w//2))
+    sortDaddies = sorted(range(len(Daddies)), key = lambda k : Idx[Daddies[k]])
+    Daddies = [Daddies[idx] for idx in sortDaddies]
+    sortMummies = sorted(range(len(Idx)), key = lambda k : Idx[k])
+    Mummies = [mummy for mummy in sortMummies if mummy not in Daddies]
+    NewGen = []
+    iterations = len(Daddies) if len(Daddies)<len(Mummies) else len(Mummies)
+    while(True):
+        for i in range(iterations):
+            if len(NewGen)==w:
+                return NewGen
+            kid = [random.choice([S[Daddies[i]][pos],S[Mummies[i]][pos]]) for pos in range(len(S[0]))]
+            if notSick(kid, MS): # kid not in NewGen and … (żeby się nie powtarzały)
+                NewGen.append(kid)
+                
+# Nie usuwajcie
+
+def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> Solutions:
     """
       Mutuje rozwiązania jeśli nie są one wystarczające.
 
@@ -209,15 +233,31 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
 
     return bestMutatedResult >= bestCurrentResult
 
+def cannotSolve(MS, M: float=M, g: float=g) -> bool:
+    mr = 0
+    review = abs(M)/g
+    for r in range(R):
+        if r<len(MS):
+            mr += MS[-(r+1)]*(R-r)
+        else:
+            return True
+        if mr>=review:
+            return False
+    return True
+    
 
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 
-# I sposób:
+# 1. sposób:
 #MS = genRandWeighs()
 
-# II sposób:
-MS = 5*[8]+4*[6]+5*[5]+4*[4]+5*[3]+4*[2]
+# 2. sposób:
+MS = 5*[8]+4*[6]+3*[5]+4*[4]+5*[3]+3*[2]
+if len(MS)!=k:
+    raise ValueError("parametr k nie zgadza się z wektorem odważników MS")
 MS = np.array(sorted(MS))
+if cannotSolve(MS):
+    raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
 
 print('MS =', MS)
 print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
@@ -232,10 +272,19 @@ for i in range(n):
 # mutate(S, R, True)
 # print(markMutation(S, S, M, g, R))
 
-(F, Idx) = sortBestSol(S, MS, M)
+F, Idx = sortBestSol(S, MS)
 print('F = ', F)
 
 print('Idx = ', Idx)
+
+#S = alternativeCrossing(S, MS, w)
+#for i in range(n):
+#    print('S[', i, '] =\n', S[i])
+#
+#F, Idx = sortBestSol(S, MS)
+#print('F = ', F)
+#
+#print('Idx = ', Idx)
 
 
 # II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
@@ -250,16 +299,21 @@ bestchild.append(F[Idx[0]])
 
 best = S[Idx[0]]
 best_value = F[Idx[0]]
+champion = [F[Idx[0]]] # historycznie najlepsze rozwiązanie
 
 # ---------- Calculation settings ----------
 howOftenMutation = 20  # Co jaki czas ma się pojawiać próba mutacji
 amountMutationAttempts = 1  # Ilość mutacji w danej próbie
-generations = 200  # Liczba generacji
+generations = 300  # Liczba generacji
+alternativeCrossingFreq = 14 # częstotliwość usuwania rozwiązań macierzystych
 # ---------- End  ----------
 
-
 for i in range(generations):
-    NewGener = Crossing(Selected)
+    if i%alternativeCrossingFreq:
+        NewGener = Crossing(Selected)
+    else:
+        NewGener = alternativeCrossing(Selected, MS, w)
+
     if i==0:
         for j in range(int(len(NewGener))):
             print('NewGener[', j, '] =\n', NewGener[j], '\n')
@@ -284,6 +338,7 @@ for i in range(generations):
     if(F[Idx[0]]<best_value):
         best_value = F[Idx[0]]
         best = NewGener[Idx[0]] if mutationFlag else mutated[Idx[0]]
+    champion.append(best_value)
     Selected = Select(NewGener if not mutated else mutated, Idx)
     # (F, I) = sortBestSol(NewGener if mutationFlag else mutated, M, g)
     # bestchild.append(F[I[0]])
@@ -293,6 +348,18 @@ for i in range(generations):
     # print(F[I[0]])
 print(bestchild)
 plt.plot(bestchild)
+plt.plot(champion[1:])
+plt.axvline(x=0,linewidth='1',linestyle=':',c='m')
+plt.axvline(x=0,linewidth='1',linestyle=':',c='y')
+#plt.grid()
+plt.title('Evolutionary algorithm')
+plt.xlabel('generation')
+plt.ylabel('objective function')
+for everyMutation in range(1,generations//howOftenMutation+1):
+    plt.axvline(x=howOftenMutation*everyMutation,linewidth='1',linestyle=':',c='m')
+for everyAlternativeCrossing in range(1,generations//alternativeCrossingFreq+1):
+    plt.axvline(x=alternativeCrossingFreq*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
+plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upper right')
 plt.show()
 print(best)
 print(best_value)
