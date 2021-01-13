@@ -3,9 +3,10 @@
 # Sample
 import numpy as np
 import random
-from typing import List, Callable
+from typing import List
 import copy
 import matplotlib.pyplot as plt
+from collections import deque
 
 
 high = 100 # [kg] najcięższy możliwy odważnik
@@ -147,20 +148,43 @@ def alternativeCrossing(S, MS, w) -> Solutions: # zabija rodziców, zatem zmniej
             kid = [random.choice([S[Daddies[i]][pos],S[Mummies[i]][pos]]) for pos in range(len(S[0]))]
             if notSick(kid, MS): # kid not in NewGen and … (żeby się nie powtarzały)
                 NewGen.append(kid)
-                
-# Nie usuwajcie
+
+
+def rotateMutation(currentSolutions: Solutions, offset: int=1) -> Solutions:
+    """
+       Rotuje rozwiązania jeśli nie są one wystarczające.
+
+               Parametry:
+                     currentSolutions (Solutions): Obecne rozwiązania, które nie spełniają warunków
+                     offset (Solutions): Przesunięcie
+
+               Returns:
+                     copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji
+     """
+    copiedCurrentSolutions = copy.deepcopy(currentSolutions)
+
+    randomSolutionNumber: int = np.random.randint(0, len(copiedCurrentSolutions))
+
+    # Randomowe rozwiązanie, w którym będziemy aplikować mutację
+    randomSolution = deque(copiedCurrentSolutions[randomSolutionNumber])
+    randomSolution.rotate(offset)
+
+    copiedCurrentSolutions[randomSolutionNumber] = list(randomSolution)
+
+    return copiedCurrentSolutions
+
 
 def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> Solutions:
     """
       Mutuje rozwiązania jeśli nie są one wystarczające.
 
               Parametry:
-                    currentSolutions (Solutions): Obecne rozwiązania, które nie spełniają warunków.
-                    maxDistance (Solutions): Maksymalny dystans, który pozwoli wygenerować listę dostępnych wszystkich miejsc.
-                    log (bool): Określa pokazywanie informacji procesu.
+                    currentSolutions (Solutions): Obecne rozwiązania, które nie spełniają warunków
+                    maxDistance (Solutions): Maksymalny dystans, który pozwoli wygenerować listę dostępnych wszystkich miejsc
+                    log (bool): Określa pokazywanie informacji procesu
 
               Returns:
-                    copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji.
+                    copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji
     """
     copiedCurrentSolutions = copy.deepcopy(currentSolutions)
 
@@ -203,23 +227,23 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
         Ocenia mutację pod względem lepszego rezultatu. Jeśli wynik jest korzystniejszy zwraca False.
 
                 Parametry:
-                      currentSolutions (Solutions): Obecne rozwiązania.
-                      mutatedSolutions (Solutions): Zmutowane rozwiązania.
-                      torque (float): Moment siły.
-                      gravity (float): Przyspieszenie.
+                      currentSolutions (Solutions): Obecne rozwiązania
+                      mutatedSolutions (Solutions): Zmutowane rozwiązania
+                      torque (float): Moment siły
+                      gravity (float): Przyspieszenie
 
                 Returns:
-                      (bool): Wiadomość o korzystniejszym stanie.
+                      (bool): Wiadomość o korzystniejszym stanie
     """
     def objectiveFunction(solutions: Solutions) -> float:
         """
              Zwraca najlepszy rezultat w danych rozwiązaniach.
 
                      Parametry:
-                           solutions (Solutions): Rozwiązania.
+                           solutions (Solutions): Rozwiązania
 
                      Returns:
-                           bestResult (float): Najlepszy rezultat.
+                           bestResult (float): Najlepszy rezultat
          """
         bestResult = min([abs(torque - gravity *
                               sum([weight * (index - maxDistance) for index, weight in enumerate(solution) if weight]))
@@ -306,9 +330,13 @@ howOftenMutation = 20  # Co jaki czas ma się pojawiać próba mutacji
 amountMutationAttempts = 1  # Ilość mutacji w danej próbie
 generations = 300  # Liczba generacji
 alternativeCrossingFreq = 14 # częstotliwość usuwania rozwiązań macierzystych
+alternativeMutationFrequency = 20
+counterAlternativeMutation = 0
 # ---------- End  ----------
 
 for i in range(generations):
+    mutated = None
+    newGener = None
     if i%alternativeCrossingFreq:
         NewGener = Crossing(Selected)
     else:
@@ -318,7 +346,7 @@ for i in range(generations):
         for j in range(int(len(NewGener))):
             print('NewGener[', j, '] =\n', NewGener[j], '\n')
     mutationFlag = True
-    mutated = None
+
     if not (i+1) % howOftenMutation:
         mutated = mutate(NewGener, R)
         mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
@@ -338,6 +366,15 @@ for i in range(generations):
     if(F[Idx[0]]<best_value):
         best_value = F[Idx[0]]
         best = NewGener[Idx[0]] if mutationFlag else mutated[Idx[0]]
+        counterAlternativeMutation = 0
+    else:
+        counterAlternativeMutation += 1
+    print(counterAlternativeMutation)
+    if counterAlternativeMutation == alternativeMutationFrequency:
+        randomOffset: int = np.random.randint(0, 2*R)
+        mutated = rotateMutation(NewGener if not mutated else mutated, randomOffset)
+        counterAlternativeMutation = 0
+
     champion.append(best_value)
     Selected = Select(NewGener if not mutated else mutated, Idx)
     # (F, I) = sortBestSol(NewGener if mutationFlag else mutated, M, g)
