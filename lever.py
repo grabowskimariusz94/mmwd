@@ -17,7 +17,7 @@ R = 12 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k �
 M = 5620 # [Nm] moment siły
 
 w = 8 # liczba rodziców dla kolejnych generacji
-
+m = 0.125
 
 def printBeautiful(array: list, name: str, size: int) -> None:
     """
@@ -91,7 +91,7 @@ def Select(S,I):
     for i in range(w):
         good = False
         while good!=True:
-            random_selected = random.sample(range(len(I)), int(len(I)/8))
+            random_selected = random.sample(range(len(I)), int(len(I)*m))
             min_random_selected = I[min(random_selected)]
             if (min_random_selected  not in prohibited ):
                 prohibited.append(min_random_selected)
