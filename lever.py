@@ -92,11 +92,16 @@ def Select(S,I):
         good = False
         while good!=True:
             random_selected = random.sample(range(len(I)), int(len(I)*m))
-            min_random_selected = I[min(random_selected)]
-            if (min_random_selected  not in prohibited ):
-                prohibited.append(min_random_selected)
-                good = True
-        Selected.append(S[min_random_selected])
+            for i in range(len(random_selected)):
+                min_random_selected = min(random_selected)
+                if (min_random_selected  not in prohibited ):
+                    prohibited.append(min_random_selected)
+                    good = True
+                    break;
+                else:
+                    random_selected.remove(min_random_selected)
+            
+        Selected.append(S[I[min_random_selected]])
         # print('Selected[', i, '] =\n', Selected[i], '\n')
     
     return Selected
