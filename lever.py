@@ -7,6 +7,7 @@ from typing import List
 import copy
 import matplotlib.pyplot as plt
 from collections import deque
+import time
 
 
 high = 100 # [kg] najcięższy możliwy odważnik
@@ -35,7 +36,7 @@ def printBeautiful(array: list, name: str, size: int) -> None:
 def genRandWeighs(low=1, high: int=high, k: int=k):
     return np.array(sorted(random.choices(range(low,high),k=k)))
 
-reps = lambda elem: sum(MS==elem)
+reps = lambda elem, MS: np.count_nonzero(MS==elem)
 
 # wygeneruj jedno przypadkowe rozwiązanie początkowe jako wektor indeksów wektora MS
 # wygenerowany wektor ma długość 2R+1
@@ -50,21 +51,22 @@ def genRandSol(R: int=R, k: int=k):
     return Sol
 
 # oblicz wartość funkcji celu obecnego rozwiązania:
-def objectiveFunc(Sol, MS, M: float=M, g: float=g) -> int:
+def objectiveFunc(Sol, MS, M: float=M, g: float=g, R: int=R) -> int:
     mr = 0 # [kg·m]
-    if None in Sol:
-        for i in range(len(Sol)):
-            if Sol[i] is not None:
-                mr += MS[Sol[i]]*(i-R)
+    temp_sol = Sol[:len(Sol)//2]+[0]+Sol[len(Sol)//2:] if len(Sol)/2==len(Sol)//2 else Sol
+    if None in temp_sol:
+        for i in range(len(temp_sol)):
+            if temp_sol[i] is not None:
+                mr += MS[temp_sol[i]]*(i-R)
     else:
-        for i in range(len(Sol)):
-            if Sol[i] != 0:
-                mr += Sol[i]*(i-R)
+        for i in range(len(temp_sol)):
+            if temp_sol[i] != 0:
+                mr += temp_sol[i]*(i-R)
     return abs(M-g*mr)
 # argument < 0 funkcji abs() oznaczałby, że dźwignia przechyla się na grot osi
 
-def sortBestSol(S, MS, M: float=M, g: float=g):
-    F = [objectiveFunc(Sol, MS, M, g) for Sol in S] # wartości funkcji celu dla S
+def sortBestSol(S, MS, M: float=M, g: float=g, R: int=R):
+    F = [objectiveFunc(Sol, MS, M, g, R) for Sol in S] # wartości funkcji celu dla S
     Idx = sorted(range(len(F)), key = lambda k : F[k]) # indeksy sortowania
     return F, Idx
 
@@ -126,13 +128,13 @@ def Crossing(S):                                # argumentem jest lista najlepsz
         NewGener.append(child)  # rozszerzenie nowej generacji o nowe rozwiazanie
    return NewGener
 
-def notSick(kid, MS) -> bool:
+def sick(kid, MS) -> bool:
     Traits = set(kid)
     Traits.remove(0)
     for trait in Traits:
-        if kid.count(trait)>sum(MS==trait):
-            return False
-    return True
+        if kid.count(trait)>reps(trait,MS):
+            return True
+    return False
 
 # Types
 Solutions = List[List[float]]
@@ -151,7 +153,7 @@ def alternativeCrossing(S, MS, w) -> Solutions: # zabija rodziców, zatem zmniej
             if len(NewGen)==w:
                 return NewGen
             kid = [random.choice([S[Daddies[i]][pos],S[Mummies[i]][pos]]) for pos in range(len(S[0]))]
-            if notSick(kid, MS): # kid not in NewGen and … (żeby się nie powtarzały)
+            if not sick(kid, MS): # kid not in NewGen and … (żeby się nie powtarzały)
                 NewGen.append(kid)
 
 
@@ -262,7 +264,7 @@ def markMutation(currentSolutions: Solutions, mutatedSolutions: Solutions, torqu
 
     return bestMutatedResult >= bestCurrentResult
 
-def cannotSolve(MS, M: float=M, g: float=g) -> bool:
+def cannotSolve(MS, M: float=M, g: float=g, R: int=R) -> bool:
     mr = 0
     review = abs(M)/g
     for r in range(R):
@@ -276,7 +278,7 @@ def cannotSolve(MS, M: float=M, g: float=g) -> bool:
     
 
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
-
+timestamps = [time.clock()]
 # 1. sposób:
 #MS = genRandWeighs()
 
@@ -302,6 +304,9 @@ for i in range(n):
 # print(markMutation(S, S, M, g, R))
 
 F, Idx = sortBestSol(S, MS)
+
+timestamps.append(time.clock())
+
 print('F = ', F)
 
 print('Idx = ', Idx)
@@ -314,7 +319,6 @@ print('Idx = ', Idx)
 #print('F = ', F)
 #
 #print('Idx = ', Idx)
-
 
 # II etap (stworzenie iteracji dla każdego następnego pokolenia rozwiązań):
 Selected = Select(S,Idx)
@@ -333,11 +337,13 @@ champion = [F[Idx[0]]] # historycznie najlepsze rozwiązanie
 # ---------- Calculation settings ----------
 howOftenMutation = 20  # Co jaki czas ma się pojawiać próba mutacji
 amountMutationAttempts = 1  # Ilość mutacji w danej próbie
-generations = 300  # Liczba generacji
+generations = 300-1  # Liczba generacji wtórnych (minus 1 iteracja wstępna)
 alternativeCrossingFreq = 14 # częstotliwość usuwania rozwiązań macierzystych
 alternativeMutationFrequency = 20
 counterAlternativeMutation = 0
 # ---------- End  ----------
+
+timestamps.append(time.clock())
 
 for i in range(generations):
     mutated = None
@@ -376,8 +382,8 @@ for i in range(generations):
         counterAlternativeMutation += 1
     print(counterAlternativeMutation)
     if counterAlternativeMutation == alternativeMutationFrequency:
-        randomOffset: int = np.random.randint(0, 2*R)
-        mutated = rotateMutation(NewGener if not mutated else mutated, randomOffset)
+        #randomOffset: int = np.random.randint(0, 2*R)
+        mutated = rotateMutation(NewGener if not mutated else mutated)
         counterAlternativeMutation = 0
 
     champion.append(best_value)
@@ -388,7 +394,27 @@ for i in range(generations):
     #plt.plot(best_value)
 
     # print(F[I[0]])
+    timestamps.append(time.clock())
+
+durations = [1000*(timestamps[idx+1]-timestamps[idx]) for idx in range(len(timestamps)-1)]
+durations.pop(1)
+#print(sum(durations)) # czas algorytmu z pominięciem operacji pomiędzy iteracjami
+plt.figure()
+plt.title('Algorithm\'s duration: '+str(1000*(timestamps[-1]-timestamps[0]))+' ms')
+plt.plot(durations)
+plt.axvline(x=0,linewidth='1',linestyle=':',c='m')
+plt.axvline(x=0,linewidth='1',linestyle=':',c='y')
+plt.xlabel('generation')
+plt.ylabel('time [ms]')
+for everyMutation in range(1,generations//howOftenMutation+1):
+    plt.axvline(x=howOftenMutation*everyMutation,linewidth='1',linestyle=':',c='m')
+for everyAlternativeCrossing in range(1,generations//alternativeCrossingFreq+1):
+    plt.axvline(x=alternativeCrossingFreq*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
+plt.legend(['durations','mutations','alternative crossings'],loc='upper right')
+plt.show()
+
 print(bestchild)
+plt.figure()
 plt.plot(bestchild)
 plt.plot(champion[1:])
 plt.axvline(x=0,linewidth='1',linestyle=':',c='m')
