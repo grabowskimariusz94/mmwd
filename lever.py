@@ -39,7 +39,7 @@ w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 m = parameters["groupsSize"]
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseIdentical"
+staticFileName = "caseThree"
 
 amountOfAttemptsSick = 50
 
@@ -412,7 +412,7 @@ counterAlternativeMutation = 0  # do not change!
 timestamps.append(time.clock())
 
 I=0
-
+whenAlternativeMutation = []
 for i in range(generations):
     if not best_value:
         break
@@ -459,6 +459,7 @@ for i in range(generations):
     # print(counterAlternativeMutation)
     if counterAlternativeMutation == alternativeMutationFrequency:
         #randomOffset: int = np.random.randint(0, 2*R)
+        whenAlternativeMutation.append(i)
         mutated = rotateMutation(NewGener if not mutated else mutated)
         counterAlternativeMutation = 0
 
@@ -503,7 +504,9 @@ for everyMutation in range(1,generations//howOftenMutation+1):
     plt.axvline(x=howOftenMutation*everyMutation,linewidth='1',linestyle=':',c='m')
 for everyAlternativeCrossing in range(1,generations//alternativeCrossingFrequency+1):
     plt.axvline(x=alternativeCrossingFrequency*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
-plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upper right')
+for everyAlternativeMutation in whenAlternativeMutation:
+    plt.axvline(x=everyAlternativeMutation,linewidth='1',linestyle=':',c='r')
+plt.legend(['bestchild','champion','mutations','alternative crossings','alternative mutations'],loc='upper right')
 plt.show()
 print(best)
 print("Najlepsza wartość: {0}".format(best_value))
