@@ -35,10 +35,10 @@ M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
 <<<<<<< HEAD
-staticFileName = "caseAllUsed"
+staticFileName = "caseThree"
 =======
 staticFileName = "caseThree"
->>>>>>> origin/MariuszBranch
+>>>>>>> origin/MariuszBranchgit
 
 amountOfAttemptsSick = 50
 
