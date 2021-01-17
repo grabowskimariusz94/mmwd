@@ -3,7 +3,7 @@
 # Sample
 import numpy as np
 import random
-from typing import List, Dict
+from typing import List, Dict, Callable, Set, Tuple
 import copy
 import matplotlib.pyplot as plt
 from collections import deque
@@ -33,14 +33,31 @@ g = parameters["g"]  # [m/s**2] przyspieszenie ziemskie
 R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
 M = parameters["M"]  # [Nm] moment siły
 
-isStatic: bool = True  # z góry określony lub losowy przypadek
+MS = 2*[50]+10*[25]+5*[10]+5*[5]+5*[3]+5*[2]+5*[1]
 
-staticFileName = "caseAllUsed"
+w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
+m = parameters["groupsSize"]
+
+isStatic: bool = True  # z góry określony lub losowy przypadek
+staticFileName = "caseOne"
 
 amountOfAttemptsSick = 50
 
-w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
-m = 2
+staticParameters: Dict = dict()
+if isStatic:
+    staticParameters = loadParameters(staticFileName)
+
+    staticCollection: List = list()
+    for collection in staticParameters["collectionOfWeights"]:
+        weight, amount = collection.values()
+        staticCollection += amount*[weight]
+
+    # Override parameters - static case
+    MS = staticCollection
+    k = len(MS)
+    M = staticParameters["M"]
+    R = staticParameters["R"]
+    w = staticParameters["parentsSize"]
 
 # def printBeautiful(array: list, name: str, size: int) -> None:
 #     """
@@ -218,6 +235,11 @@ def rotateMutation(currentSolutions: Solutions, offset: int=1) -> Solutions:
     return copiedCurrentSolutions
 
 
+def getTupleOfRandom(set: Set) -> Tuple[int, int]:
+    randomFirstPos: int = random.choice(tuple(set))
+    randomSecondPos: int = random.choice(tuple(set - {randomFirstPos}))
+    return randomFirstPos, randomSecondPos
+
 def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> Solutions:
     """
       Mutuje rozwiązania jeśli nie są one wystarczające.
@@ -240,16 +262,15 @@ def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> So
     # Wyciąga z rozwiązania zajęte miejsca
     takenPositions: set = set([index for index, weight in enumerate(randomSolution) if weight])
     availablePositions: set = allPositions - takenPositions
+
     if not len(availablePositions):
-        randomFirstPos: int = random.choice(tuple(takenPositions))
-        randomSecondPos: int = random.choice(tuple(takenPositions))
+        randomFirstPos, randomSecondPos = getTupleOfRandom(takenPositions)
         randomSolution[randomFirstPos], randomSolution[randomSecondPos] = randomSolution[randomSecondPos], randomSolution[randomFirstPos]
         copiedCurrentSolutions[randomSolutionNumber] = randomSolution
         return copiedCurrentSolutions
 
     if not len(takenPositions):
-        randomFirstPos: int = random.choice(tuple(availablePositions))
-        randomSecondPos: int = random.choice(tuple(availablePositions))
+        randomFirstPos, randomSecondPos = getTupleOfRandom(availablePositions)
         randomSolution[randomFirstPos], randomSolution[randomSecondPos] = randomSolution[randomSecondPos], randomSolution[randomFirstPos]
         copiedCurrentSolutions[randomSolutionNumber] = randomSolution
         return copiedCurrentSolutions
@@ -335,23 +356,6 @@ timestamps = [time.clock()]
 #MS = genRandWeighs()
 
 # 2. sposób:
-MS = 2*[50]+10*[25]+5*[10]+5*[5]+5*[3]+5*[2]+5*[1]
-staticParameters: Dict = dict()
-if isStatic:
-    staticParameters = loadParameters(staticFileName)
-
-    staticCollection: List = list()
-    for collection in staticParameters["collectionOfWeights"]:
-        weight, amount = collection.values()
-        staticCollection += amount*[weight]
-
-    # Override parameters - static case
-    MS = staticCollection
-    k = len(MS)
-    M = staticParameters["M"]
-    R = staticParameters["R"]
-    w = staticParameters["parentsSize"]
-
 print(len(MS), k)
 if len(MS)!=k:
     raise ValueError("parametr k nie zgadza się z wektorem odważników MS")
@@ -362,16 +366,18 @@ if cannotSolve(MS, M, g, R):
 print('MS =', MS)
 # print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
 
-# Override parameters - static case
+# To override parameters - static case
 staticSolutions = staticParameters.get("solutions")
+
+S = None
+
 if staticSolutions:
     n = len(staticSolutions)
-
-S = [genRandSol() for i in range(n)]
-if staticSolutions:
     S = staticSolutions
-if not isStatic:
-    S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
+    S = transformSol(S, MS)  # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
+else:
+    S = [genRandSol() for i in range(n)]
+
 for i in range(n):
     print('S[', i, '] =\n', S[i])
     # print('Powtórzenia \'3\' w S[', i, ']:', S[i].count(3), '\n') # powtórzenia w liście
