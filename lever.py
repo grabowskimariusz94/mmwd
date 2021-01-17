@@ -34,7 +34,7 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseOneSided"
+staticFileName = "caseSymmetrical"
 
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 # m = parameters["groupsSize"]
@@ -95,6 +95,8 @@ def transformSol(S, MS):
     return list(map(g,S))
 
 def Select(S,I):
+    if len(I) < w:
+        return S;
     Selected = []
     ''' 
     # mocno elitarnie
@@ -155,7 +157,8 @@ def Crossing(S):                                # argumentem jest lista najlepsz
 
 def sick(kid, MS) -> bool:
     Traits = set(kid)
-    Traits.remove(0)
+    if 0 in Traits:
+        Traits.remove(0)
     for trait in Traits:
         if kid.count(trait)>reps(trait,MS):
             return True
@@ -335,18 +338,22 @@ print(len(MS), k)
 if len(MS)!=k:
     raise ValueError("parametr k nie zgadza się z wektorem odważników MS")
 MS = np.array(sorted(MS))
-# if cannotSolve(MS):
-#     raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
+if cannotSolve(MS, M, g, R):
+    raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
 
 print('MS =', MS)
 print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
 
 # Override parameters - static case
 staticSolutions = staticParameters.get("solutions")
-n = len(staticSolutions)
+if staticSolutions:
+    n = len(staticSolutions)
 
-S = [staticSolutions[i] or genRandSol() for i in range(n)]
-S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
+S = [genRandSol() for i in range(n)]
+if staticSolutions:
+    S = staticSolutions
+if not isStatic:
+    S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 for i in range(n):
     print('S[', i, '] =\n', S[i])
     print('Powtórzenia \'3\' w S[', i, ']:', S[i].count(3), '\n') # powtórzenia w liście
@@ -400,15 +407,14 @@ counterAlternativeMutation = 0  # do not change!
 timestamps.append(time.clock())
 
 for i in range(generations):
-    # if not bestchild:
-    #     break
+    if not best_value:
+        break
     mutated = None
     newGener = None
-    # if i%alternativeCrossingFrequency:
-    NewGener = Crossing(Selected)
-    # else:
-        # NewGener = alternativeCrossing(Selected, MS, w)
-
+    if i%alternativeCrossingFrequency:
+        NewGener = Crossing(Selected)
+    else:
+        NewGener = alternativeCrossing(Selected, MS, w)
 
     if i==0:
         for j in range(int(len(NewGener))):
@@ -437,7 +443,7 @@ for i in range(generations):
         counterAlternativeMutation = 0
     else:
         counterAlternativeMutation += 1
-    print(counterAlternativeMutation)
+    # print(counterAlternativeMutation)
     if counterAlternativeMutation == alternativeMutationFrequency:
         #randomOffset: int = np.random.randint(0, 2*R)
         mutated = rotateMutation(NewGener if not mutated else mutated)
