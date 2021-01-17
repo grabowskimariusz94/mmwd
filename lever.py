@@ -3,7 +3,7 @@
 # Sample
 import numpy as np
 import random
-from typing import List, Dict, Callable, Set, Tuple
+from typing import List, Dict, Set, Tuple
 import copy
 import matplotlib.pyplot as plt
 from collections import deque
@@ -39,7 +39,7 @@ w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 m = parameters["groupsSize"]
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseOne"
+staticFileName = "caseIdentical"
 
 amountOfAttemptsSick = 50
 
@@ -358,14 +358,12 @@ staticSolutions = staticParameters.get("solutions")
 
 S = None
 
-
-
 if staticSolutions:
     n = len(staticSolutions)
     S = staticSolutions
-    S = transformSol(S, MS)  # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 else:
     S = [genRandSol() for i in range(n)]
+    S = transformSol(S, MS)  # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 
 for i in range(n):
     print('S[', i, '] =\n', S[i])
