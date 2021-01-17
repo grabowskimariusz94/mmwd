@@ -34,7 +34,7 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseTooLight"
+staticFileName = "caseThree"
 
 amountOfAttemptsSick = 50
 
@@ -325,10 +325,10 @@ timestamps = [time.clock()]
 #MS = genRandWeighs()
 
 # 2. sposób:
-MS = 5*[8]+4*[6]+3*[5]+4*[4]+5*[3]+3*[2]
+MS = 2*[50]+10*[25]+5*[10]+5*[5]+5*[3]+5*[2]+5*[1]
 staticParameters: Dict = dict()
 if isStatic:
-    staticParameters = loadParameters("caseOneSided")
+    staticParameters = loadParameters(staticFileName)
 
     staticCollection: List = list()
     for collection in staticParameters["collectionOfWeights"]:
@@ -414,6 +414,8 @@ counterAlternativeMutation = 0  # do not change!
 
 timestamps.append(time.clock())
 
+I=0
+
 for i in range(generations):
     if not best_value:
         break
@@ -454,6 +456,7 @@ for i in range(generations):
         best_value = F[Idx[0]]
         best = NewGener[Idx[0]] if mutationFlag else mutated[Idx[0]]
         counterAlternativeMutation = 0
+        I=i
     else:
         counterAlternativeMutation += 1
     # print(counterAlternativeMutation)
@@ -507,6 +510,7 @@ plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upp
 plt.show()
 print(best)
 print(best_value)
+print(I)
 
 #printBeautiful(mutated, "mutated", len(mutated))
 
