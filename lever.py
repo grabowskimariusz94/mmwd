@@ -36,6 +36,8 @@ M = parameters["M"]  # [Nm] moment siły
 isStatic: bool = True  # z góry określony lub losowy przypadek
 staticFileName = "caseTooLight"
 
+amountOfAttemptsSick = 50
+
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 m = 2
 
@@ -176,6 +178,7 @@ def alternativeCrossing(S, MS, w) -> Solutions: # zabija rodziców, zatem zmniej
     Mummies = [mummy for mummy in sortMummies if mummy not in Daddies]
     NewGen = []
     iterations = len(Daddies) if len(Daddies)<len(Mummies) else len(Mummies)
+    counterSick: int = 0
     while(True):
         for i in range(iterations):
             if len(NewGen)==w:
@@ -183,6 +186,11 @@ def alternativeCrossing(S, MS, w) -> Solutions: # zabija rodziców, zatem zmniej
             kid = [random.choice([S[Daddies[i]][pos],S[Mummies[i]][pos]]) for pos in range(len(S[0]))]
             if not sick(kid, MS): # kid not in NewGen and … (żeby się nie powtarzały)
                 NewGen.append(kid)
+                counterSick = 0
+            else:
+                counterSick += 1
+                if counterSick > amountOfAttemptsSick:
+                    return False
 
 
 def rotateMutation(currentSolutions: Solutions, offset: int=1) -> Solutions:
@@ -414,7 +422,12 @@ for i in range(generations):
     if i%alternativeCrossingFrequency:
         NewGener = Crossing(Selected)
     else:
-        NewGener = alternativeCrossing(Selected, MS, w)
+        ProbablyNewGener = alternativeCrossing(Selected, MS, w)
+        if ProbablyNewGener:
+            NewGener = ProbablyNewGener
+        else:
+            NewGener = Crossing(Selected)
+
 
     if i==0:
         for j in range(int(len(NewGener))):
