@@ -34,11 +34,8 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-<<<<<<< HEAD
-staticFileName = "caseThree"
-=======
-staticFileName = "caseThree"
->>>>>>> origin/MariuszBranchgit
+
+staticFileName = "caseAllUsed"
 
 amountOfAttemptsSick = 50
 
@@ -450,9 +447,7 @@ for i in range(generations):
     mutationFlag = True
 
     if not (i+1) % howOftenMutation:
-        print("w")
         mutated = mutate(NewGener, R)
-        print("o")
         # mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
         # if mutationFlag:
         #     counter = 0
@@ -524,8 +519,8 @@ for everyAlternativeCrossing in range(1,generations//alternativeCrossingFrequenc
 plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upper right')
 plt.show()
 print(best)
-print(best_value)
-print(I)
+print("Najlepsza wartość: {0}".format(best_value))
+print("W której iteracji: {0}".format(I))
 
 #printBeautiful(mutated, "mutated", len(mutated))
 
