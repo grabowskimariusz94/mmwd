@@ -3,34 +3,53 @@
 # Sample
 import numpy as np
 import random
-from typing import List
+from typing import List, Dict
 import copy
 import matplotlib.pyplot as plt
 from collections import deque
 import time
+import json
 
 
-high = 100 # [kg] najcięższy możliwy odważnik
-k = 24 # liczba odważników
-n = 12 # liczba rozwiązań początkowych
-g = 10 # [m/s**2] przyspieszenie ziemskie
-R = 12 # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
-M = 5620 # [Nm] moment siły
-
-w = 8 # liczba rodziców dla kolejnych generacji
-m = 0.125
-
-def printBeautiful(array: list, name: str, size: int) -> None:
+def loadParameters(fileName: str="parameters") -> Dict:
     """
-          Printuje listę w czytelniejszy sposób.
+          Ładuje parametry z pliku o formacie json.
 
                   Parametry:
-                        array (list): Lista.
-                        name (str): Nazwa listy.
-                        n (int): Rozmiar listy.
+                        fileName (str): Nazwa pliku
     """
-    for i in range(size):
-        print('{name}[{i}] =\n {value} \n'.format(name=name, i=i, value=array[i]))
+    with open(fileName+".json") as f:
+        variables = json.load(f)
+
+    return variables
+
+
+parameters = loadParameters()
+
+high = parameters["theHeaviest"]  # [kg] najcięższy możliwy odważnik
+k = parameters["numberOfWeights"]  # Liczba odważników
+n = parameters["numberOfInitSolutions"]  # Liczba rozwiązań początkowych
+g = parameters["g"]  # [m/s**2] przyspieszenie ziemskie
+R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni (warunek: k ≤ 2*R+1)
+M = parameters["M"]  # [Nm] moment siły
+
+isStatic: bool = True  # z góry określony lub losowy przypadek
+staticFileName = "caseOneSided"
+
+w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
+# m = parameters["groupsSize"]
+m = 0.2
+# def printBeautiful(array: list, name: str, size: int) -> None:
+#     """
+#           Printuje listę w czytelniejszy sposób.
+#
+#                   Parametry:
+#                         array (list): Lista.
+#                         name (str): Nazwa listy.
+#                         n (int): Rozmiar listy.
+#     """
+#     for i in range(size):
+#         print('{name}[{i}] =\n {value} \n'.format(name=name, i=i, value=array[i]))
 
 # wygeneruj przypadkowy zbiór <size> odważników z zakresu liczb naturalnych [low,high] i zwróć posortowane:
 def genRandWeighs(low=1, high: int=high, k: int=k):
@@ -122,8 +141,14 @@ def Crossing(S):                                # argumentem jest lista najlepsz
             else: 
                 x = S[j][gen]
             if(x!=0):
-                while (child.count(x)>=np.count_nonzero(MS == x)):    #gdy brakuje ciężarków
-                    x = random.choice(MS)               #to wylosuj na to miejsce inny
+                # while (child.count(x)>=np.count_nonzero(MS == x)):    #gdy brakuje ciężarków
+                #     x = random.choice(MS)               #to wylosuj na to miejsce inny
+                s = 0
+                while (child.count(x) >= np.count_nonzero(MS == x)):  # gdy brakuje ciężarków
+                    s += 1
+                    x = random.choice(MS)  # to wylosuj na to miejsce inny
+                    if s == 10:
+                        break
             child.append(x)         # dodaj ciezarek z miejscem do nowego rozwiazania
         NewGener.append(child)  # rozszerzenie nowej generacji o nowe rozwiazanie
    return NewGener
@@ -194,8 +219,8 @@ def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> So
                     copiedCurrentSolutions (Solutions): Zmutowane rozwiązania do dalszej weryfikacji
     """
     copiedCurrentSolutions = copy.deepcopy(currentSolutions)
-
     randomSolutionNumber: int = np.random.randint(0, len(copiedCurrentSolutions))
+
     # Randomowe rozwiązanie, w którym będziemy aplikować mutację
     randomSolution: List[float] = copiedCurrentSolutions[randomSolutionNumber]
 
@@ -203,6 +228,12 @@ def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> So
     # Wyciąga z rozwiązania zajęte miejsca
     takenPositions: set = set([index for index, weight in enumerate(randomSolution) if weight])
     availablePositions: set = allPositions - takenPositions
+    if not len(availablePositions):
+        randomFirstPos: int = random.choice(tuple(takenPositions))
+        randomSecondPos: int = random.choice(tuple(takenPositions))
+        randomSolution[randomFirstPos], randomSolution[randomSecondPos] = randomSolution[randomSecondPos], randomSolution[randomFirstPos]
+        copiedCurrentSolutions[randomSolutionNumber] = randomSolution
+        return copiedCurrentSolutions
     if log:
         print("\n\nMutate...")
         print("Wszystkie miejsca: ", allPositions)
@@ -284,16 +315,37 @@ timestamps = [time.clock()]
 
 # 2. sposób:
 MS = 5*[8]+4*[6]+3*[5]+4*[4]+5*[3]+3*[2]
+staticParameters: Dict = dict()
+if isStatic:
+    staticParameters = loadParameters("caseOneSided")
+
+    staticCollection: List = list()
+    for collection in staticParameters["collectionOfWeights"]:
+        weight, amount = collection.values()
+        staticCollection += amount*[weight]
+
+    # Override parameters - static case
+    MS = staticCollection
+    k = len(MS)
+    M = staticParameters["M"]
+    R = staticParameters["R"]
+    w = staticParameters["parentsSize"]
+
+print(len(MS), k)
 if len(MS)!=k:
     raise ValueError("parametr k nie zgadza się z wektorem odważników MS")
 MS = np.array(sorted(MS))
-if cannotSolve(MS):
-    raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
+# if cannotSolve(MS):
+#     raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
 
 print('MS =', MS)
 print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
 
-S = [genRandSol() for i in range(n)]
+# Override parameters - static case
+staticSolutions = staticParameters.get("solutions")
+n = len(staticSolutions)
+
+S = [staticSolutions[i] or genRandSol() for i in range(n)]
 S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 for i in range(n):
     print('S[', i, '] =\n', S[i])
@@ -335,23 +387,28 @@ best_value = F[Idx[0]]
 champion = [F[Idx[0]]] # historycznie najlepsze rozwiązanie
 
 # ---------- Calculation settings ----------
-howOftenMutation = 20  # Co jaki czas ma się pojawiać próba mutacji
-amountMutationAttempts = 1  # Ilość mutacji w danej próbie
-generations = 300-1  # Liczba generacji wtórnych (minus 1 iteracja wstępna)
-alternativeCrossingFreq = 14 # częstotliwość usuwania rozwiązań macierzystych
-alternativeMutationFrequency = 20
-counterAlternativeMutation = 0
+howOftenMutation = parameters["howOftenMutation"]  # Co jaki czas ma się pojawiać próba mutacji
+amountMutationAttempts = parameters["amountMutationAttempts"]  # Ilość mutacji w danej próbie
+generations = parameters["generations"]-1  # Liczba generacji wtórnych (minus 1 iteracja wstępna)
+alternativeCrossingFrequency = parameters["alternativeCrossingFrequency"]  # Częstotliwość usuwania rozwiązań macierzystych
+alternativeMutationFrequency = parameters["alternativeMutationFrequency"]
+# ---------- End  ----------
+# ---------- Private calculation settings ----------
+counterAlternativeMutation = 0  # do not change!
 # ---------- End  ----------
 
 timestamps.append(time.clock())
 
 for i in range(generations):
+    # if not bestchild:
+    #     break
     mutated = None
     newGener = None
-    if i%alternativeCrossingFreq:
-        NewGener = Crossing(Selected)
-    else:
-        NewGener = alternativeCrossing(Selected, MS, w)
+    # if i%alternativeCrossingFrequency:
+    NewGener = Crossing(Selected)
+    # else:
+        # NewGener = alternativeCrossing(Selected, MS, w)
+
 
     if i==0:
         for j in range(int(len(NewGener))):
@@ -360,17 +417,17 @@ for i in range(generations):
 
     if not (i+1) % howOftenMutation:
         mutated = mutate(NewGener, R)
-        mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
-        if mutationFlag:
-            counter = 0
-            copyMutated = copy.deepcopy(mutated)
-            attempts = amountMutationAttempts
-            while mutationFlag and counter <= attempts:
-                copyMutated = mutate(NewGener, R)
-                mutationFlag = markMutation(NewGener, copyMutated, M, g, R)
-                counter += 1
-            if counter <= attempts:
-                mutated = copyMutated
+        # mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
+        # if mutationFlag:
+        #     counter = 0
+        #     copyMutated = copy.deepcopy(mutated)
+        #     attempts = amountMutationAttempts
+        #     while mutationFlag and counter <= attempts:
+        #         copyMutated = mutate(NewGener, R)
+        #         mutationFlag = markMutation(NewGener, copyMutated, M, g, R)
+        #         counter += 1
+        #     if counter <= attempts:
+        #         mutated = copyMutated
 
     (F, Idx) = sortBestSol(NewGener if not mutated else mutated, MS, M)
     bestchild.append(F[Idx[0]])
@@ -408,8 +465,8 @@ plt.xlabel('generation')
 plt.ylabel('time [ms]')
 for everyMutation in range(1,generations//howOftenMutation+1):
     plt.axvline(x=howOftenMutation*everyMutation,linewidth='1',linestyle=':',c='m')
-for everyAlternativeCrossing in range(1,generations//alternativeCrossingFreq+1):
-    plt.axvline(x=alternativeCrossingFreq*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
+for everyAlternativeCrossing in range(1,generations//alternativeCrossingFrequency+1):
+    plt.axvline(x=alternativeCrossingFrequency*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
 plt.legend(['durations','mutations','alternative crossings'],loc='upper right')
 plt.show()
 
@@ -425,8 +482,8 @@ plt.xlabel('generation')
 plt.ylabel('objective function')
 for everyMutation in range(1,generations//howOftenMutation+1):
     plt.axvline(x=howOftenMutation*everyMutation,linewidth='1',linestyle=':',c='m')
-for everyAlternativeCrossing in range(1,generations//alternativeCrossingFreq+1):
-    plt.axvline(x=alternativeCrossingFreq*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
+for everyAlternativeCrossing in range(1,generations//alternativeCrossingFrequency+1):
+    plt.axvline(x=alternativeCrossingFrequency*everyAlternativeCrossing,linewidth='1',linestyle=':',c='y')
 plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upper right')
 plt.show()
 print(best)
