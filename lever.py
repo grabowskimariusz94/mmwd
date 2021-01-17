@@ -34,7 +34,11 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
+<<<<<<< HEAD
 staticFileName = "caseAllUsed"
+=======
+staticFileName = "caseThree"
+>>>>>>> origin/MariuszBranch
 
 amountOfAttemptsSick = 50
 
@@ -334,7 +338,7 @@ timestamps = [time.clock()]
 #MS = genRandWeighs()
 
 # 2. sposób:
-MS = 5*[8]+4*[6]+3*[5]+4*[4]+5*[3]+3*[2]
+MS = 2*[50]+10*[25]+5*[10]+5*[5]+5*[3]+5*[2]+5*[1]
 staticParameters: Dict = dict()
 if isStatic:
     staticParameters = loadParameters(staticFileName)
@@ -359,7 +363,7 @@ if cannotSolve(MS, M, g, R):
     raise ValueError("odważniki są zbyt lekkie, żeby zredukować wypadkowy moment siły do zera")
 
 print('MS =', MS)
-print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
+# print('Powtórzenia \'2\' w MS:', sum(MS==2), '\n') # powtórzenia w np.array
 
 # Override parameters - static case
 staticSolutions = staticParameters.get("solutions")
@@ -373,7 +377,7 @@ if not isStatic:
     S = transformSol(S, MS) # zakomentuj to, jeśli chcesz działać na indeksach a nie na masach
 for i in range(n):
     print('S[', i, '] =\n', S[i])
-    print('Powtórzenia \'3\' w S[', i, ']:', S[i].count(3), '\n') # powtórzenia w liście
+    # print('Powtórzenia \'3\' w S[', i, ']:', S[i].count(3), '\n') # powtórzenia w liście
 
 # Odkomentuj jeśli chcesz zobaczyć mutate
 # mutate(S, R, True)
@@ -423,6 +427,8 @@ counterAlternativeMutation = 0  # do not change!
 
 timestamps.append(time.clock())
 
+I=0
+
 for i in range(generations):
     if not best_value:
         break
@@ -465,6 +471,7 @@ for i in range(generations):
         best_value = F[Idx[0]]
         best = NewGener[Idx[0]] if mutationFlag else mutated[Idx[0]]
         counterAlternativeMutation = 0
+        I=i
     else:
         counterAlternativeMutation += 1
     # print(counterAlternativeMutation)
@@ -518,6 +525,7 @@ plt.legend(['bestchild','champion','mutations','alternative crossings'],loc='upp
 plt.show()
 print(best)
 print(best_value)
+print(I)
 
 #printBeautiful(mutated, "mutated", len(mutated))
 
