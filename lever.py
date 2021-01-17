@@ -34,7 +34,7 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseTooLight"
+staticFileName = "caseAllUsed"
 
 amountOfAttemptsSick = 50
 
@@ -245,12 +245,21 @@ def mutate(currentSolutions: Solutions, maxDistance: int, log: bool=False) -> So
         randomSolution[randomFirstPos], randomSolution[randomSecondPos] = randomSolution[randomSecondPos], randomSolution[randomFirstPos]
         copiedCurrentSolutions[randomSolutionNumber] = randomSolution
         return copiedCurrentSolutions
+
+    if not len(takenPositions):
+        randomFirstPos: int = random.choice(tuple(availablePositions))
+        randomSecondPos: int = random.choice(tuple(availablePositions))
+        randomSolution[randomFirstPos], randomSolution[randomSecondPos] = randomSolution[randomSecondPos], randomSolution[randomFirstPos]
+        copiedCurrentSolutions[randomSolutionNumber] = randomSolution
+        return copiedCurrentSolutions
+
     if log:
         print("\n\nMutate...")
         print("Wszystkie miejsca: ", allPositions)
         print("Zajęte miejsca: ", takenPositions)
         print("Dostępne miejsca: ", availablePositions)
 
+    print(copiedCurrentSolutions)
     randomAvailablePosition: int = random.choice(tuple(availablePositions))
     randomWeightDistanceNumber: int = random.choice(tuple(takenPositions))
     if log:
@@ -328,7 +337,7 @@ timestamps = [time.clock()]
 MS = 5*[8]+4*[6]+3*[5]+4*[4]+5*[3]+3*[2]
 staticParameters: Dict = dict()
 if isStatic:
-    staticParameters = loadParameters("caseOneSided")
+    staticParameters = loadParameters(staticFileName)
 
     staticCollection: List = list()
     for collection in staticParameters["collectionOfWeights"]:
@@ -435,7 +444,9 @@ for i in range(generations):
     mutationFlag = True
 
     if not (i+1) % howOftenMutation:
+        print("w")
         mutated = mutate(NewGener, R)
+        print("o")
         # mutationFlag: bool = markMutation(NewGener, mutated, M, g, R)
         # if mutationFlag:
         #     counter = 0
