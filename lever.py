@@ -34,7 +34,7 @@ R = parameters["R"]  # [m] maksymalna odległość od punktu podparcia dźwigni 
 M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseSymmetrical"
+staticFileName = "caseTooLight"
 
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 # m = parameters["groupsSize"]
