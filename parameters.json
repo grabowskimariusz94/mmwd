@@ -9,7 +9,7 @@
   "groupsSize": 2,
   "howOftenMutation": 20,
   "amountMutationAttempts": 1,
-  "generations": 3000,
+  "generations": 300,
   "alternativeCrossingFrequency": 14,
   "alternativeMutationFrequency": 20
 }

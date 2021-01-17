@@ -35,12 +35,12 @@ M = parameters["M"]  # [Nm] moment siły
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
 
-staticFileName = "caseAllUsed"
+staticFileName = "caseThree"
 
 amountOfAttemptsSick = 50
 
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
-m = 2
+m = parameters["groupsSize"] 
 
 # def printBeautiful(array: list, name: str, size: int) -> None:
 #     """
@@ -504,7 +504,7 @@ plt.show()
 
 print(bestchild)
 plt.figure()
-plt.plot(bestchild)
+plt.plot(bestchild[1:])
 plt.plot(champion[1:])
 plt.axvline(x=0,linewidth='1',linestyle=':',c='m')
 plt.axvline(x=0,linewidth='1',linestyle=':',c='y')
