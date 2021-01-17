@@ -38,6 +38,7 @@ MS = 2*[50]+10*[25]+5*[10]+5*[5]+5*[3]+5*[2]+5*[1]
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 m = parameters["groupsSize"]
 
+<<<<<<< HEAD
 isStatic: bool = True  # z góry określony lub losowy przypadek
 staticFileName = "caseOne"
 
@@ -58,6 +59,14 @@ if isStatic:
     M = staticParameters["M"]
     R = staticParameters["R"]
     w = staticParameters["parentsSize"]
+=======
+staticFileName = "caseThree"
+
+amountOfAttemptsSick = 50
+
+w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
+m = parameters["groupsSize"] 
+>>>>>>> 67ff822f3382ddcebdca4b2718c05449e10e1bbb
 
 # def printBeautiful(array: list, name: str, size: int) -> None:
 #     """
@@ -371,6 +380,8 @@ staticSolutions = staticParameters.get("solutions")
 
 S = None
 
+
+
 if staticSolutions:
     n = len(staticSolutions)
     S = staticSolutions
@@ -510,7 +521,7 @@ plt.show()
 
 print(bestchild)
 plt.figure()
-plt.plot(bestchild)
+plt.plot(bestchild[1:])
 plt.plot(champion[1:])
 plt.axvline(x=0,linewidth='1',linestyle=':',c='m')
 plt.axvline(x=0,linewidth='1',linestyle=':',c='y')
