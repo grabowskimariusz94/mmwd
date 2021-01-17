@@ -39,7 +39,9 @@ w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
 m = parameters["groupsSize"]
 
 isStatic: bool = True  # z góry określony lub losowy przypadek
-staticFileName = "caseThree"
+
+staticFileName = "caseOne"
+
 
 amountOfAttemptsSick = 50
 
