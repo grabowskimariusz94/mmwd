@@ -37,8 +37,8 @@ isStatic: bool = True  # z góry określony lub losowy przypadek
 staticFileName = "caseTooLight"
 
 w = parameters["parentsSize"] # liczba rodziców dla kolejnych generacji
-# m = parameters["groupsSize"]
-m = 0.2
+m = 2
+
 # def printBeautiful(array: list, name: str, size: int) -> None:
 #     """
 #           Printuje listę w czytelniejszy sposób.
@@ -114,7 +114,7 @@ def Select(S,I):
     for i in range(w):
         good = False
         while good!=True:
-            random_selected = random.sample(range(len(I)), int(len(I)*m))
+            random_selected = random.sample(range(len(I)), m)
             for i in range(len(random_selected)):
                 min_random_selected = min(random_selected)
                 if (min_random_selected  not in prohibited ):
