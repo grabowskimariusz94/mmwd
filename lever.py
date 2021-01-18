@@ -342,10 +342,7 @@ def cannotSolve(MS, M: float=M, g: float=g, R: int=R) -> bool:
 
 # I etap (tworzenie pierwszego pokolenia rozwiązań):
 timestamps = [time.clock()]
-# 1. sposób:
 #MS = genRandWeighs()
-
-# 2. sposób:
 print(len(MS), k)
 if len(MS)!=k:
     raise ValueError("parametr k nie zgadza się z wektorem odważników MS")
@@ -400,6 +397,8 @@ best = S[Idx[0]]
 best_value = F[Idx[0]]
 champion = [F[Idx[0]]] # historycznie najlepsze rozwiązanie
 
+I=0
+whenAlternativeMutation = []
 # ---------- Calculation settings ----------
 howOftenMutation = parameters["howOftenMutation"]  # Co jaki czas ma się pojawiać próba mutacji
 amountMutationAttempts = parameters["amountMutationAttempts"]  # Ilość mutacji w danej próbie
@@ -412,9 +411,6 @@ counterAlternativeMutation = 0  # do not change!
 # ---------- End  ----------
 
 timestamps.append(time.clock())
-
-I=0
-whenAlternativeMutation = []
 for i in range(generations):
     if not best_value:
         break
